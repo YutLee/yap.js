@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+<div id="temp">
+
+</div>
+<script type="text/javascript" src="./doT.min.js"></script>
+<script type="text/javascript">
+function T(data, fn) {
+  var state = [];
+
+  var originData = data;
+  fn.call(this, originData);
+
+  function getValue(value) {
+  	console.log(value)
+  	var newValue = {};
+		Object.getOwnPropertyNames(value).forEach(function(prop) {
+			console.log(value[prop])
+			if(isObject(value[prop])) {
+				newValue[prop] = getValue(value[prop]);
+			}else {
+				console.log(33)
+				newValue[prop] = value[prop];
+			}
+		});
+		return newValue;
+  }
+
+	function define(data) {
+  	var props = Object.getOwnPropertyNames(data);
+	  props.forEach(function(prop) {
+	  	var newValue = data[prop];
+
+		  Object.defineProperty(data, prop, {
+		    get: function() {
+		      return newValue;
+		    },
+		    set: function(value) {
+		    	console.log(1, value)
+		      // if(isObject(value)) {
+		      // 	newValue = getValue(value);
+		      // }else {
+		      // }
+		      newValue = value;
+		      fn.call(this, originData)
+		      if(isObject(value)) {
+						define(value);
+					}
+		      state.push({ val: JSON.parse(JSON.stringify(originData)) });
+		    }
+		  });
+
+		  if(isObject(newValue)) {
+				define(newValue);
+			}
+
+	  });
+  }
+
+  define(originData);
+  this.getState = function() {
+  	return state;
+  };
+}
+
+function isObject(obj) {
+	return Object.prototype.toString.call(obj) === '[object Object]';
+}
+
+var temp = document.getElementById('temp');
+var data = {prop: '121231', name: '-----', a: {a: {a: 1}}};
+var t = new T(data, function(data) {
+	var tempFn = doT.template("<span>{{=it.prop}}{{=it.name}}{{=it.a.a.a}}</span>");
+	var resultText = tempFn(data);
+	temp.innerHTML = resultText;
+});
+
+setTimeout(function() {
+	data.prop = '11111';
+	data.a.a = 5;
+	// data.a = 5;
+	setTimeout(function() {
+		data.a.a = {a: 5};
+	}, 1000)
+	setTimeout(function() {
+		data.a.a.a = 6;
+		console.log(t.getState());
+	}, 2000)
+	// console.log(data.a.a)
+}, 1000)
+
+</script>
+</body>
+</html>
